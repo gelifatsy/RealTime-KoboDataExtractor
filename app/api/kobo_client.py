@@ -209,5 +209,5 @@ def process_and_store_data():
 
     print(f"\nTotal records processed: {record_count}")
 
-if __name__ == "__main__":
-    process_and_store_data()
+# if __name__ == "__main__":
+#     process_and_store_data()
