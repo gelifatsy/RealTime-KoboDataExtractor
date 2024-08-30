@@ -1,5 +1,6 @@
 import os
 import requests
+import pandas as pd  # Import pandas for data manipulation
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -17,17 +18,8 @@ HEADERS = {
 }
 
 def fetch_data_from_kobo(page_size=PAGE_SIZE):
-    """
-    Fetches data from KoboToolbox API and handles large datasets using pagination.
-
-    Args:
-        page_size (int): The number of records to fetch per page (default is set by PAGE_SIZE).
-
-    Returns:
-        list: A list of records fetched from the KoboToolbox API.
-    """
     records = []
-    next_url = KOBO_API_URL  # Start with the initial URL
+    next_url = KOBO_API_URL
     params = {
         'page_size': page_size
     }
@@ -35,12 +27,11 @@ def fetch_data_from_kobo(page_size=PAGE_SIZE):
     while next_url:
         try:
             response = requests.get(next_url, headers=HEADERS, params=params)
-            response.raise_for_status()  # Raise an exception for HTTP errors
+            response.raise_for_status()
 
             data = response.json()
-            records.extend(data['results'])  # Append new data to the records list
+            records.extend(data['results'])
 
-            # Check if there is a next page
             next_url = data.get('next')
             if next_url:
                 print(f"Fetching next page: {next_url}")
@@ -50,8 +41,28 @@ def fetch_data_from_kobo(page_size=PAGE_SIZE):
 
     return records
 
+def save_data_to_csv(data, file_path='extracted_data.csv'):
+    if not data:
+        print("No data to save.")
+        return
+
+    # Create a DataFrame from the records
+    df = pd.DataFrame(data)
+
+    # Convert lists to strings if any
+    for column in df.columns:
+        if df[column].dtype == 'object':
+            df[column] = df[column].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+
+    # Save the DataFrame to a CSV file
+    df.to_csv(file_path, index=False, encoding='utf-8')
+    print(f"Data saved to {file_path}")
+
 if __name__ == "__main__":
     data = fetch_data_from_kobo()
     print(f"Total records fetched: {len(data)}")
-    # Print the first few records for inspection
     print(data[:5])
+
+    # Specify the full path including the filename
+    save_path = './data/extracted_data.csv'  # Ensure the directory exists
+    save_data_to_csv(data, save_path)
