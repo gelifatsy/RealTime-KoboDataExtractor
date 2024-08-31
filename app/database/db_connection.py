@@ -1,4 +1,3 @@
-#Import libraries
 import os
 import logging
 from sqlalchemy import create_engine
@@ -13,9 +12,22 @@ load_dotenv()
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Get the database URL from the environment variable
-DATABASE_URL = os.getenv('DATABASE_URL')
+# Determine if we're in production or development
+IS_PRODUCTION = os.getenv("ENVIRONMENT", "development") == "production"
+
+# Get the appropriate database URL
+if IS_PRODUCTION:
+    DATABASE_URL = os.getenv("PRODUCTION_DATABASE_URL")
+    logger.info("Using production database.")
+else:
+    DATABASE_URL = os.getenv("LOCAL_DATABASE_URL")
+    logger.info("Using local database.")
+
 logger.info(f"Using database URL: {DATABASE_URL}")
+
+# Ensure the DATABASE_URL is using the correct protocol
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # Create the database engine
 engine = create_engine(DATABASE_URL, echo=True)
