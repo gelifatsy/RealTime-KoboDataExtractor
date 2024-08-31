@@ -1,9 +1,8 @@
-# app/webhook/webhook_endpoint.py
-
 from fastapi import FastAPI, Request, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database.db_connection import SessionLocal
 from app.database.models import KoboSubmission, Client, BusinessInfo, SurveyMetadata
+from uuid import UUID
 import datetime
 
 app = FastAPI()
@@ -22,26 +21,32 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
         payload = await request.json()
         print(f"Received webhook data: {payload}")
         
-        # Extract data from payload
-        submission_data = payload.get("submission", {})
-        client_data = payload.get("client", {})
-        business_info_data = payload.get("business_info", {})
-        survey_metadata_data = payload.get("survey_metadata", {})
+        # Extract data from payload with careful mapping
+        submission_data = payload  # Direct use of the payload
+        client_data = submission_data  # Adjust based on actual payload structure
+        business_info_data = submission_data  # Adjust based on actual payload structure
+        survey_metadata_data = submission_data  # Adjust based on actual payload structure
+
+        # Log extracted data for verification
+        print(f"Submission Data: {submission_data}")
+        print(f"Client Data: {client_data}")
+        print(f"Business Info Data: {business_info_data}")
+        print(f"Survey Metadata Data: {survey_metadata_data}")
 
         # Create KoboSubmission instance
         new_submission = KoboSubmission(
             _id=submission_data.get("_id"),
-            form_uuid=submission_data.get("formhub/uuid"),
-            instance_id=submission_data.get("meta/instanceID"),
-            submission_time=submission_data.get("submission_time", datetime.datetime.now()),
-            start_time=submission_data.get("starttime", datetime.datetime.now()),
-            end_time=submission_data.get("endtime", datetime.datetime.now()),
-            survey_date=submission_data.get("cd_survey_date", datetime.date.today()),
-            _geolocation=submission_data.get("_geolocation"),
+            form_uuid=UUID(submission_data.get("formhub/uuid")) if submission_data.get("formhub/uuid") else None,
+            instance_id=UUID(submission_data.get("meta/instanceID")) if submission_data.get("meta/instanceID") else None,
+            submission_time=submission_data.get("_submission_time") or datetime.datetime.now(),
+            start_time=submission_data.get("starttime") or datetime.datetime.now(),
+            end_time=submission_data.get("endtime") or datetime.datetime.now(),
+            survey_date=submission_data.get("cd_survey_date") or datetime.date.today(),
+            _geolocation=str(submission_data.get("_geolocation")),
             _status=submission_data.get("_status"),
-            _tags=submission_data.get("_tags"),
-            _notes=submission_data.get("_notes"),
-            _validation_status=submission_data.get("_validation_status"),
+            _tags=str(submission_data.get("_tags")),
+            _notes=str(submission_data.get("_notes")),
+            _validation_status=str(submission_data.get("_validation_status")),
             _submitted_by=submission_data.get("_submitted_by"),
             version=submission_data.get("__version__")
         )
@@ -54,21 +59,21 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
         # Create and associate Client instance
         if client_data:
             new_client = Client(
-                unique_id=client_data.get("unique_id"),
-                client_name=client_data.get("client_name"),
-                location=client_data.get("location"),
-                client_phone=client_data.get("client_phone"),
-                alt_phone=client_data.get("alt_phone"),
-                phone_type=client_data.get("phone_type"),
-                gender=client_data.get("gender"),
-                age=client_data.get("age"),
-                nationality=client_data.get("nationality"),
-                strata=client_data.get("strata"),
-                disability=client_data.get("disability"),
-                education=client_data.get("education"),
-                client_status=client_data.get("client_status"),
-                sole_income_earner=client_data.get("sole_income_earner"),
-                responsible_people=client_data.get("responsible_people"),
+                unique_id=client_data.get("sec_a/unique_id"),
+                client_name=client_data.get("sec_c/cd_client_name"),
+                location=client_data.get("sec_c/cd_location"),
+                client_phone=client_data.get("sec_c/cd_clients_phone"),
+                alt_phone=client_data.get("sec_c/cd_phoneno_alt_number"),
+                phone_type=client_data.get("sec_c/cd_clients_phone_smart_feature"),
+                gender=client_data.get("sec_c/cd_gender"),
+                age=client_data.get("sec_c/cd_age"),
+                nationality=client_data.get("sec_c/cd_nationality"),
+                strata=client_data.get("sec_c/cd_strata"),
+                disability=client_data.get("sec_c/cd_disability"),
+                education=client_data.get("sec_c/cd_education"),
+                client_status=client_data.get("sec_c/cd_client_status"),
+                sole_income_earner=client_data.get("sec_c/cd_sole_income_earner"),
+                responsible_people=client_data.get("sec_c/cd_howrespble_pple"),
                 submission_id=new_submission.id  # Associate with submission
             )
             db.add(new_client)
@@ -78,13 +83,13 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
         # Create and associate BusinessInfo instance
         if business_info_data:
             new_business_info = BusinessInfo(
-                country_name=business_info_data.get("country_name"),
-                region_name=business_info_data.get("region_name"),
-                bda_name=business_info_data.get("bda_name"),
-                cohort=business_info_data.get("cohort"),
-                program=business_info_data.get("program"),
-                biz_status=business_info_data.get("biz_status"),
-                biz_operating=business_info_data.get("biz_operating", False),
+                country_name=business_info_data.get("sec_a/cd_biz_country_name"),
+                region_name=business_info_data.get("sec_a/cd_biz_region_name"),
+                bda_name=business_info_data.get("sec_b/bda_name"),
+                cohort=business_info_data.get("sec_b/cd_cohort"),
+                program=business_info_data.get("sec_b/cd_program"),
+                biz_status=business_info_data.get("group_mx5fl16/cd_biz_status"),
+                biz_operating=business_info_data.get("group_mx5fl16/bd_biz_operating") == 'yes',
                 submission_id=new_submission.id  # Associate with submission
             )
             db.add(new_business_info)
@@ -94,9 +99,9 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
         # Create and associate SurveyMetadata instance
         if survey_metadata_data:
             new_survey_metadata = SurveyMetadata(
-                form_uuid=survey_metadata_data.get("form_uuid"),
-                instance_id=survey_metadata_data.get("instance_id"),
-                form_version=survey_metadata_data.get("form_version"),
+                form_uuid=UUID(survey_metadata_data.get("formhub/uuid")) if survey_metadata_data.get("formhub/uuid") else None,
+                instance_id=UUID(survey_metadata_data.get("meta/instanceID")) if survey_metadata_data.get("meta/instanceID") else None,
+                form_version=survey_metadata_data.get("__version__"),
                 submission_id=new_submission.id  # Associate with submission
             )
             db.add(new_survey_metadata)
