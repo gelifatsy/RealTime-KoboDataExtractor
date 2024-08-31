@@ -20,12 +20,12 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
     try:
         payload = await request.json()
         print(f"Received webhook data: {payload}")
-        
-        # Extract data from payload with careful mapping
-        submission_data = payload  # Direct use of the payload
-        client_data = submission_data  # Adjust based on actual payload structure
-        business_info_data = submission_data  # Adjust based on actual payload structure
-        survey_metadata_data = submission_data  # Adjust based on actual payload structure
+
+        # Extract data from payload
+        submission_data = payload
+        client_data = submission_data
+        business_info_data = submission_data
+        survey_metadata_data = submission_data
 
         # Log extracted data for verification
         print(f"Submission Data: {submission_data}")
@@ -61,6 +61,7 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
             new_client = Client(
                 unique_id=client_data.get("sec_a/unique_id"),
                 client_name=client_data.get("sec_c/cd_client_name"),
+                client_id_manifest=client_data.get("sec_c/cd_client_id_manifest"),
                 location=client_data.get("sec_c/cd_location"),
                 client_phone=client_data.get("sec_c/cd_clients_phone"),
                 alt_phone=client_data.get("sec_c/cd_phoneno_alt_number"),
@@ -69,11 +70,11 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
                 age=client_data.get("sec_c/cd_age"),
                 nationality=client_data.get("sec_c/cd_nationality"),
                 strata=client_data.get("sec_c/cd_strata"),
-                disability=client_data.get("sec_c/cd_disability"),
+                disability=True if client_data.get("sec_c/cd_disability") == "Yes" else False,
                 education=client_data.get("sec_c/cd_education"),
                 client_status=client_data.get("sec_c/cd_client_status"),
-                sole_income_earner=client_data.get("sec_c/cd_sole_income_earner"),
-                responsible_people=client_data.get("sec_c/cd_howrespble_pple"),
+                sole_income_earner=True if client_data.get("sec_c/cd_sole_income_earner") == "Yes" else False,
+                responsible_people=int(client_data.get("sec_c/cd_howrespble_pple")),
                 submission_id=new_submission.id  # Associate with submission
             )
             db.add(new_client)
@@ -89,7 +90,7 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
                 cohort=business_info_data.get("sec_b/cd_cohort"),
                 program=business_info_data.get("sec_b/cd_program"),
                 biz_status=business_info_data.get("group_mx5fl16/cd_biz_status"),
-                biz_operating=business_info_data.get("group_mx5fl16/bd_biz_operating") == 'yes',
+                biz_operating=True if business_info_data.get("group_mx5fl16/bd_biz_operating") == "yes" else False,
                 submission_id=new_submission.id  # Associate with submission
             )
             db.add(new_business_info)
