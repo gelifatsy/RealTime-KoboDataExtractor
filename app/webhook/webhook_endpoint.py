@@ -1,9 +1,13 @@
+# app/webhook/webhook_endpoint.py
+
 from fastapi import FastAPI, Request, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database.db_connection import SessionLocal
 from app.database.models import KoboSubmission, Client, BusinessInfo, SurveyMetadata
+from app.schemas import KoboSubmissionSchema, ClientSchema, BusinessInfoSchema, SurveyMetadataSchema  # Import Pydantic schemas
 from uuid import UUID
 import datetime
+from typing import List
 
 app = FastAPI()
 
@@ -111,6 +115,17 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
 
         return {"status": "success", "message": "Webhook data received and saved"}
 
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# GET endpoint to retrieve all submissions
+@app.get("/submissions", response_model=List[KoboSubmissionSchema])
+def get_submissions(db: Session = Depends(get_db)):
+    try:
+        # Fetch all submissions from the database
+        submissions = db.query(KoboSubmission).all()
+        return submissions
     except Exception as e:
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
