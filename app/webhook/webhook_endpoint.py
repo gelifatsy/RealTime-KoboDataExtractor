@@ -4,7 +4,6 @@ from app.database.db_connection import SessionLocal
 from app.database.models import KoboSubmission, Client, BusinessInfo, SurveyMetadata
 from uuid import UUID
 import datetime
-from typing import List
 
 app = FastAPI()
 
@@ -112,15 +111,6 @@ async def webhook_endpoint(request: Request, db: Session = Depends(get_db)):
 
         return {"status": "success", "message": "Webhook data received and saved"}
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-@app.get("/submissions", response_model=List[KoboSubmission])
-def get_submissions(db: Session = Depends(get_db)):
-    try:
-        submissions = db.query(KoboSubmission).all()
-        return submissions
     except Exception as e:
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
