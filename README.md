@@ -1,6 +1,4 @@
-Here's the converted README.md in proper markdown format:
 
-```markdown
 # Real-Time Kobo Data Extractor
 
 This project is a FastAPI-based application that handles real-time data extraction from a webhook, processes the data, and stores it in a PostgreSQL database. The application is deployed on Render, ensuring seamless communication for webhook submissions.
@@ -14,7 +12,7 @@ This project is a FastAPI-based application that handles real-time data extracti
 
 ## Folder Structure
 
-```plaintext
+```
 RealTime-KoboDataExtractor/
 │
 ├── app/
