@@ -55,7 +55,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory with the following content:
 
 ```plaintext
-Use all actual URLs and tokens with actual values when deploying or running the project.
+Use all actual URLs and tokens with actual values when deploying or running the project. 
 ```
 
 #### **4. Running the Application**
