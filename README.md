@@ -112,7 +112,7 @@ curl https://realtime-kobodataextractor.onrender.com/submissions
 The project includes unit and integration tests located in the `tests/` directory. To run the tests:
 
 ```bash
-pytest -v tests/
+pytest -v tests/test_api.py
 ```
 
 #### **8. Deployment**
